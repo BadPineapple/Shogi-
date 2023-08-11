@@ -23,11 +23,32 @@ const horsedragon =
 
 const playerDisplay = document.querySelector("#player");
 const board = document.querySelector("#board");
+const button = document.querySelector("button");
+const winner = document.querySelector("#winner");
+const popup = document.querySelector(".popup-wrapper");
+const close = document.querySelector(".popup-close");
 
 let player = "white";
+
 playerDisplay.textContent = "white";
 
 const width = 9;
+
+button.addEventListener("click", () => {
+  let winnerGo = player === "white" ? "black" : "white";
+  winner.textContent = winnerGo;
+  popup.style.display = "block";
+});
+
+popup.addEventListener("click", (event) => {
+  const classNameOfClickedElement = event.target.classList[0];
+  if (
+    classNameOfClickedElement === "popup-close" ||
+    classNameOfClickedElement === "popup-link" ||
+    classNameOfClickedElement === "popup-wrapper"
+  )
+    location.reload();
+});
 
 const startPieces = [
   lances,
@@ -168,6 +189,18 @@ function dragDrop(e) {
     Number(e.target.parentNode.getAttribute("square-id"));
 
   if (correctGo) {
+    if (targetId <= 80 && targetId >= 54) {
+      if (
+        draggedElement.id == "pawns" ||
+        draggedElement.id == "lances" ||
+        draggedElement.id == "knights" ||
+        draggedElement.id == "silver"
+      ) {
+        draggedElement.id = "gold";
+      }
+      if (draggedElement.id == "rook") draggedElement.id = "dragon";
+      if (draggedElement.id == "bishop") draggedElement.id = "horsedragon";
+    }
     if (beTaken && valid) {
       e.target.parentNode.append(draggedElement);
       e.target.remove();
@@ -179,17 +212,6 @@ function dragDrop(e) {
       e.target.append(draggedElement);
       changePlayer();
       return;
-    }
-    if (targetId <= 80 && targetId >= 54) {
-      if (
-        draggedElement.id == "pawns" ||
-        draggedElement.id == "lances" ||
-        draggedElement.id == "knights" ||
-        draggedElement.id == "silver"
-      )
-        draggedElement.id = "gold";
-      if (draggedElement.id == "rook") draggedElement.id = "dragon";
-      if (draggedElement.id == "bishop") draggedElement.id = "horsedragon";
     }
     console.log(draggedElement.id);
     if (taken && beTaken) return;
@@ -206,23 +228,16 @@ function checkIfValid(target) {
   switch (piece) {
     case "pawns":
       if (startId + width === targetId && !(startId === targetId)) {
-        if (targetId <= 80 && targetId >= 54) {
-        }
         return true;
       }
       break;
 
     case "bishop":
-      // if (startId + (targetId - startId) === targetId || startId - (startId - targetId) === targetId || startId + 1 === targetId || startId - 1 === targetId|| startId + width === targetId ||
-      //   startId - width === targetId && !(startId === targetId))
-
       if (
         startId + (targetId - startId) === targetId ||
         (startId - (startId - targetId) === targetId && !(startId === targetId))
       ) {
         return true;
-        if (targetId <= 80 && targetId >= 54)
-          piece.firstChild.classList.add("prom");
       }
       break;
 
@@ -243,8 +258,6 @@ function checkIfValid(target) {
         startId < targetId
       ) {
         return true;
-        if (targetId <= 80 && targetId >= 54)
-          piece.firstChild.classList.add("prom");
       }
       break;
 
@@ -351,4 +364,15 @@ function reverseIds() {
 function revertIds() {
   const allSquares = document.querySelectorAll("#board .square");
   allSquares.forEach((square, i) => square.setAttribute("square-id", i));
+}
+
+function checkForWin() {
+  const king = Array.from(document.querySelectorAll("#king"));
+  if (!king.some((king) => king.firstChild.classList("white"))) {
+    popup.style.display = "block";
+    winner = "black";
+  } else if (!king.some((king) => king.firstChild.classList("black"))) {
+    popup.style.display = "block";
+    winner = "white";
+  }
 }
