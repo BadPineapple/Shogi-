@@ -1,0 +1,132 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    display: grid;
+    place-items: center;
+    overflow-x: hidden;
+    background-color: #161B22;
+}
+
+button {
+    display: block;
+    margin: 20px auto;
+    padding: 5px 6px;
+    font-size: 25px;
+    background-color: #e7d2b7;
+    cursor: pointer;
+}
+
+.popup-wrapper {
+    display: none;
+    background: rgba(0, 0, 0, 0.5);
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+}
+
+.popup{
+    text-align: center;
+    width: 100%;
+    max-width: 300px;
+    margin: 10% auto;
+    padding: 20px;
+    background: aliceblue;
+    position: relative;
+}
+
+.popup a {
+    padding: 5px 6px;
+    background-color: #e7d2b7;
+    cursor: pointer;
+    text-decoration: none;
+}
+.popup-close {
+    position: absolute;
+    top: 5px;
+    right: 10px;
+    cursor: pointer;
+
+}
+
+#square {
+    width: 100px;
+    height: 100px;
+    background: red;
+}
+
+#board {
+    width: 630px;
+    height: 630px;
+    display: flex;
+    flex-wrap: wrap;
+}
+
+#WC {
+    width: 630px;
+    margin-bottom : 25px;
+    display: flex;
+    flex-wrap: wrap;
+    overflow-x: auto;
+}
+
+#BC {
+    width: 630px;
+    margin-top: 25px;
+    display: flex;
+    flex-wrap: wrap;
+    overflow-x: auto;
+}
+
+.square {
+    height: 70px;
+    width: 70px;
+    position: relative;
+}
+
+.square svg {
+    height: 50px;
+    width: 50px;
+    margin-right: 10px;
+    margin-left: 10px;
+    margin-top: 10px;
+    position: relative;
+    z-index: -9;
+}
+
+path {
+    position: relative;
+    z-index: -10;
+}
+
+.piece {
+    position: relative;
+    z-index: 9;
+    cursor: pointer;
+}
+
+.color1 {
+    background-color: blanchedalmond;
+}
+
+.color2 {
+    background-color: rgb(137, 82, 10);
+}
+
+.prom {
+    fill: #ff0000;
+}
+
+.black {
+    fill: #000000;
+}
+
+.white {
+    fill: #ff7575;
+}

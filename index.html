@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="author" content="BadPineapple" />
+        <title>Shogi</title>
+        <link rel="stylesheet" href="shogi.css" type="text/css" />
+    </head>
+
+    <body>
+        <div style="text-align: center; font-size: 90px; color: #C9D1D9;">
+            <p>Shogii</p>
+        </div>
+        <br />
+
+        <div id="WC"></div>
+        <div style="align-content: center" id="board"></div>
+        <div id="BC"></div>
+
+        <button>Desistir</button>
+
+        <div class="popup-wrapper">
+            <div class="popup">
+                <div class="popup-close">X</div>
+
+                <div class="popup-content">
+                    <h2>End Game</h2>
+                    <br/>
+                    <p><span id="winner"></span> Win</p>
+                    <br/>
+                    <a class="popup-link" href="#">Continue</a>
+                </div>
+            </div>
+        </div>
+
+        <p style="text-align: center; font-size: 30px; color: #C9D1D9;">
+            It's <span id="player"></span>'s turn
+        </p>
+
+        <script src="shogi.js" type="text/javascript" ></script>
+
+        <!--Adicinar botão de desistir-->
+    </body>
+</html>
