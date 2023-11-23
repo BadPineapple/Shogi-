@@ -327,28 +327,28 @@ function checkIfValid(target){
 
         case 'dragon':
             if (startId + targetId%9 - startId%9 === targetId || (targetId - startId)%9 === 0 || (startId - targetId)%9 === 0 || startId + width + 1 === targetId ||
-              startId + width - 1 === targetId || startId - width + 1 === targetId || startId - width - 1 === targetId && !(startId === targetId)){
-                if(targetId > startId){
-                    if(startId + targetId%9 - startId%9 === targetId)
+              startId + width - 1 === targetId || startId - width + 1 === targetId || startId - width - 1 === targetId && !(startId === targetId)) {
+                if (targetId > startId) {
+                    if (startId + targetId % 9 - startId % 9 === targetId)
                         for (let i = startId + 1; i < targetId; i += 1)
                             if (document.querySelector(`[square-id = "${i}"]`).firstChild?.classList.contains("piece"))
                                 return false
-                    if ((targetId - startId)%9 === 0)
+                    if ((targetId - startId) % 9 === 0)
                         for (let i = startId + 9; i < targetId; i += 9)
                             if (document.querySelector(`[square-id = "${i}"]`).firstChild?.classList.contains("piece"))
                                 return false
                 }
-                if(targetId < startId){
-                    if(startId + targetId%9 - startId%9 === targetId)
+                if (targetId < startId) {
+                    if (startId + targetId % 9 - startId % 9 === targetId)
                         for (let i = startId - 1; i > targetId; i -= 1)
                             if (document.querySelector(`[square-id = "${i}"]`).firstChild?.classList.contains("piece"))
                                 return false
-                    if ((startId - targetId)%9 === 0)
+                    if ((startId - targetId) % 9 === 0)
                         for (let i = startId - 9; i > targetId; i -= 9)
                             if (document.querySelector(`[square-id = "${i}"]`).firstChild?.classList.contains("piece"))
                                 return false
                 }
-
+            }
             break;
         case 'horsedragon':
             if (startId + (targetId - startId) === targetId || startId - (startId - targetId) === targetId || startId + 1 === targetId || startId - 1 === targetId|| startId + width === targetId ||
@@ -449,6 +449,10 @@ function check(){
 
     for (let i = kingLoc; (i%9 >= kingLoc%9) && (i <= 80); i += 10) {
         if (checkSquare(i, ['bishop', 'horsedragon'])) {
+            for (let e = kingLoc + 10; e < i; e += 10)
+                if (document.querySelector(`[square-id = "${e}"]`).firstChild?.classList.contains('piece'))
+                    return false
+
             console.log('not pass 1 i= ' + i)
             return true
         }
@@ -456,6 +460,10 @@ function check(){
     }
     for (let i = kingLoc; (i%9 <= kingLoc%9) && (i <= 80); i += 8) {
         if (checkSquare(i, ['bishop', 'horsedragon'])) {
+            for (let e = kingLoc + 8; e < i; e += 8)
+                if (document.querySelector(`[square-id = "${e}"]`).firstChild?.classList.contains('piece'))
+                    return false
+
             console.log('not pass 2 i= ' + i)
             return true
         }
@@ -463,6 +471,10 @@ function check(){
     }
     for (let i = kingLoc; (i%9 <= kingLoc%9) && (i >= 0); i -= 10) {
         if (checkSquare(i, ['bishop', 'horsedragon'])) {
+            for (let e = kingLoc - 10; e > i; e -= 10)
+                if (document.querySelector(`[square-id = "${e}"]`).firstChild?.classList.contains('piece'))
+                    return false
+
             console.log('not pass 3 i= ' + i)
             return true
         }
@@ -470,6 +482,10 @@ function check(){
     }
     for (let i = kingLoc; (i%9 >= kingLoc%9) && (i >= 0); i -= 8) {
         if (checkSquare(i, ['bishop', 'horsedragon'])) {
+            for (let e = kingLoc - 8; e > i; e -= 8)
+                if (document.querySelector(`[square-id = "${e}"]`).firstChild?.classList.contains('piece'))
+                    return false
+
             console.log('not pass 4 i= ' + i)
             return true
         }
@@ -478,6 +494,10 @@ function check(){
 
     for (let i = kingLoc; i <= (kingLoc + 9 * Math.floor(9 - kingLoc / 9)); i += 9) {
         if (checkSquare(i, ['lance', 'rook', 'dragon'])) {
+            for (let e = kingLoc + 9; e < i; e += 9)
+                if (document.querySelector(`[square-id = "${e}"]`).firstChild?.classList.contains("piece"))
+                    return false
+
             console.log('not pass 5 i= ' + i)
             return true
         }
@@ -485,6 +505,10 @@ function check(){
     }
     for (let i = kingLoc; i >= Math.floor(kingLoc / 9); i -= 9) {
         if (checkSquare(i, ['rook', 'dragon'])) {
+            for (let e = kingLoc - 9; e > i; e -= 9)
+                if (document.querySelector(`[square-id = "${e}"]`).firstChild?.classList.contains("piece"))
+                    return false
+
             console.log('not pass 6 i= ' + i)
             return true
         }
@@ -492,6 +516,10 @@ function check(){
     }
     for (let i = kingLoc; i <= kingLoc + (kingLoc % 9); i += 1) {
         if (checkSquare(i, ['rook', 'dragon'])) {
+            for (let e = kingLoc + 1; e < i; e += 1)
+                if (document.querySelector(`[square-id = "${e}"]`).firstChild?.classList.contains("piece"))
+                    return false
+
             console.log('not pass 7 i= ' + i)
             return true
         }
@@ -499,6 +527,10 @@ function check(){
     }
     for (let i = kingLoc;( i >= kingLoc - (8 - kingLoc % 9)) ; i -= 1) {
         if (checkSquare(i, ['rook', 'dragon'])) {
+            for (let e = kingLoc - 1; e > i; e -= 1)
+                if (document.querySelector(`[square-id = "${e}"]`).firstChild?.classList.contains("piece"))
+                    return false
+
             console.log('not pass 8 i= ' + i)
             return true
         }
