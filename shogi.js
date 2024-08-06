@@ -48,6 +48,13 @@ function moveSound(){
     audio.play()
 }
 
+function resetSquareColors() {
+    const allSquares = document.querySelectorAll('.square');
+    allSquares.forEach(square => {
+        square.classList.remove('colorGreen', 'colorRed');
+    });
+}
+
 function captureSound(){
     let audio = new Audio('Sound/Capture.mp3')
     audio.play()
@@ -69,7 +76,7 @@ function pieceClass(piece){
     switch (piece){
         case "pawn":
             return pawn
-        case "bichop":
+        case "bishop":
             return bishop
         case "rook":
             return rook
@@ -89,7 +96,6 @@ function pieceClass(piece){
             return ''
     }
 }
-
 
 function createBc() {
     bc.forEach((bc, i) => {
@@ -161,11 +167,20 @@ allSquares.forEach(square => {
 
 let startPositionId
 let draggedElement
-
+ 
 function dragStart (e){
     startPositionId = e.target.parentNode.getAttribute('square-id')
-    draggedElement = e.target
-    console.log('oi')
+    const correctGo = e.target.classList.contains(player)
+    //console.log(correctGo);
+    const parentElement = e.target.parentNode;
+    if (correctGo && parentElement && parentElement.hasAttribute('square-id')) {
+        startPositionId = parentElement.getAttribute('square-id');
+        draggedElement = e.target;
+        movementCheck(draggedElement.id);
+        console.log('Drag started');
+    } else {
+        console.error('Invalid drag target');
+    }
 }
 
 function dragOver (e){
@@ -175,46 +190,39 @@ function dragOver (e){
 function dragDrop (e){
     e.stopPropagation()
     const correctGo = draggedElement.classList.contains(player)
+    const targetElement = e.target.classList.contains('square') ? e.target : e.target.parentNode;
     const taken = e.target.classList.contains("piece")
     const valid = checkIfValid(e.target)
     const beTaken = e.target.classList.contains(player)
     const targetId = Number(e.target.getAttribute('square-id')) || Number(e.target.parentNode.getAttribute('square-id'))
 
-    if (correctGo && valid && !check()){
-        if (targetId <= 80 && targetId >= 54) {
-            if (draggedElement.id == 'pawn' || draggedElement.id == 'lance' || draggedElement.id == 'knight' || draggedElement.id == 'silver') {
-                draggedElement.id = 'gold'
-                draggedElement.innerHTML = ''
-                draggedElement.innerHTML = upGold
-                draggedElement.firstChild.classList.add(player)
-            }
-            if(draggedElement.id == 'rook') {
-                draggedElement.id = 'dragon'
-                draggedElement.innerHTML = ''
-                draggedElement.innerHTML = dragon
-                draggedElement.firstChild.classList.add(player)
-            }
-            if(draggedElement.id == 'bishop') {
-                draggedElement.id = 'horsedragon'
-                draggedElement.innerHTML = ''
-                draggedElement.innerHTML = horsedragon
-                draggedElement.firstChild.classList.add(player)
-            }
-        }
+    //console.log(`Correct Go: ${correctGo}`);
+    //console.log(`Taken: ${taken}`);
+    //console.log(`Valid: ${valid}`);
+    //console.log(`Be Taken: ${beTaken}`);
+    //console.log(`Target ID: ${targetId}`);
+
+    if (correctGo && valid){
         if (valid) {
-            if(taken)
-                if(!beTaken){
-                    deadPiece(e.target)
-                    e.target.parentNode.append(draggedElement)
-                    e.target.remove()
+            if(taken) {
+                if (!beTaken) {
+                    //console.log('Piece captured')
+                    deadPiece(targetElement.firstChild)
+                    targetElement.append(draggedElement)
                     captureSound()
                 } else
                     return
+            }
             else
                 e.target.append(draggedElement)
+            
             checkForWin()
             moveSound()
+            if (targetId <= 80 && targetId >= 54) {
+                promotePiece(draggedElement);
+            }
             changePlayer()
+
             return
         }
 
@@ -224,163 +232,170 @@ function dragDrop (e){
 
 }
 
-function checkIfValid(target){
-    const targetId = Number(target.getAttribute('square-id')) || Number(target.parentNode.getAttribute('square-id'))
-    const startId = Number(startPositionId)
-    const piece = draggedElement.id
+function promotePiece(element) {
+    const piecePromotions = {
+        'pawn'  : 'gold',
+        'lance' : 'gold',
+        'knight': 'gold',
+        'silver': 'gold',
+        'rook'  : 'dragon',
+        'bishop': 'horsedragon'
+    };
+    newPiece = piecePromotions[element.id];
+    if (newPiece) {
+        element.id = newPiece;
+        element.innerHTML = '';
+        if(newPiece == 'gold')
+            newPiece = upGold;
+        if(newPiece == 'dragon')
+            newPiece = dragon;
+        if(newPiece == 'horsedragon')
+            newPiece = horsedragon;
+        element.innerHTML = newPiece;  // Assuming global variables for piece HTML
+        element.firstChild.classList.add(player);
+    }
+}
+
+function movementCheck(piece){
+    local = Number(startPositionId)
+
+    AroundKnigth = [14, 19]
+    AroundSilver = [8, 9 , 10, -8, -10]
+    AroundGold   = [1, 8, 9 , 10, -1, -9]
+    Around       = [1, 8, 9 , 10, -1, -8, -9, -10]
+
+    function checkAndColor(squareId, canJump = false) {
+        const square = document.querySelector(`[square-id="${squareId}"]`);
+        if (!square) return false;
+        const pieceOnSquare = square.firstChild?.classList.contains('piece');
+        const isEnemy = pieceOnSquare && !(square.firstChild?.classList[1] === player);
+
+        //console.log(`Square ID: ${squareId}, Piece on Square: ${pieceOnSquare}, Is Enemy: ${isEnemy}`);
+
+
+        if (pieceOnSquare) {
+            if (isEnemy) {
+                square.classList.add('colorRed');
+            }
+            return false;
+        }
+        
+
+        square.classList.add('colorGreen');
+        //console.log(`Square Color: ${square.classList}`);
+
+        return true;
+    }
+
+    function moveInDirection(increment, limitCondition) {
+        for (let i = local + increment; limitCondition(i); i += increment) {
+            if (!checkAndColor(i)) break;
+        }
+    }
 
     switch (piece){
-        case 'pawn':
-            if (startId + width === targetId && !(startId === targetId)) {
-                return true
-            }
+        case "pawn":
+            checkAndColor(local + 9);
+            break;
+            
+        case "bishop":
+            moveInDirection(10, i => i >= 0 && i <= 80 && Math.abs(Math.floor(i / 9) - Math.floor(local / 9)) === Math.abs(i % 9 - local % 9)); // Mover na diagonal direita-baixo
+            moveInDirection(8, i => i >= 0 && i <= 80 && Math.abs(Math.floor(i / 9) - Math.floor(local / 9)) === Math.abs(i % 9 - local % 9)); // Mover na diagonal esquerda-baixo
+            moveInDirection(-10, i => i >= 0 && i <= 80 && Math.abs(Math.floor(i / 9) - Math.floor(local / 9)) === Math.abs(i % 9 - local % 9)); // Mover na diagonal esquerda-cima
+            moveInDirection(-8, i => i >= 0 && i <= 80 && Math.abs(Math.floor(i / 9) - Math.floor(local / 9)) === Math.abs(i % 9 - local % 9)); // Mover na diagonal direita-cima
             break;
 
-        case 'bishop':
-            if ((targetId-startId)%8==0 || (targetId-startId)%10==0 || (startId-targetId) % 10 ==0 || (startId-targetId) % 8 == 0 && !(startId === targetId)) {
-                if (targetId > startId) {
-                    if((targetId-startId)%10==0)
-                        for (i = startId + 10; i < targetId; i = i + 10)
-                            if (document.querySelector(`[square-id = "${i}"]`).firstChild?.classList.contains('piece'))
-                                return false
-                    if((targetId-startId)%8==0)
-                        for (i = startId + 8; i < targetId; i = i + 8)
-                            if (document.querySelector(`[square-id = "${i}"]`).firstChild?.classList.contains('piece'))
-                                return false
+        case "rook":
+            moveInDirection(9, i => i <= 80); // Mover para baixo
+            moveInDirection(-9, i => i >= 0); // Mover para cima
+            moveInDirection(1, i => Math.floor(i / 9) === Math.floor(local / 9)); // Mover para a direita
+            moveInDirection(-1, i => Math.floor(i / 9) === Math.floor(local / 9)); // Mover para a esquerda
+            break;
+
+        case "lance":
+            moveInDirection(9, i => i <= (local + 9 * Math.floor(9 - local / 9))); // Move vertically forward
+            break;
+
+
+        case "knight":
+            AroundKnight.forEach(offset => checkAndColor(local + offset));
+            break;
+
+        case "silver":
+            AroundSilver.forEach(offset => checkAndColor(local + offset));
+            break;
+
+        case "gold":
+            AroundGold.forEach(offset => checkAndColor(local + offset));
+            break;
+
+        case "dragon":
+            Around.forEach(offset => checkAndColor(local + offset));
+            moveInDirection(9, i => i <= 80);
+            moveInDirection(-9, i => i >= 0);
+            moveInDirection(1, i => Math.floor(i / 9) === Math.floor(local / 9));
+            moveInDirection(-1, i => Math.floor(i / 9) === Math.floor(local / 9));
+            break;
+
+
+        case "horsedragon":
+            Around.forEach(offset => checkAndColor(local + offset));
+            moveInDirection(10, i => i >= 0 && i <= 80 && Math.abs(Math.floor(i / 9) - Math.floor(local / 9)) === Math.abs(i % 9 - local % 9));
+            moveInDirection(8, i => i >= 0 && i <= 80 && Math.abs(Math.floor(i / 9) - Math.floor(local / 9)) === Math.abs(i % 9 - local % 9));
+            moveInDirection(-10, i => i >= 0 && i <= 80 && Math.abs(Math.floor(i / 9) - Math.floor(local / 9)) === Math.abs(i % 9 - local % 9));
+            moveInDirection(-8, i => i >= 0 && i <= 80 && Math.abs(Math.floor(i / 9) - Math.floor(local / 9)) === Math.abs(i % 9 - local % 9));
+            break;
+
+        case "king":
+            Around.forEach(offset => {
+                const squareId = local + offset;
+                const square = document.querySelector(`[square-id="${squareId}"]`);
+                if (square) {
+                    const pieceOnSquare = square.firstChild?.classList.contains('piece');
+                    const isEnemy = pieceOnSquare && !(square.firstChild?.classList[1] === player);
+
+                    if (isEnemy) {
+                        square.classList.add('colorRed');
+                    } else {
+                        square.classList.add('colorGreen');
+                    }
                 }
-                if (targetId < startId) {
-                    if((startId-targetId) % 10 ==0)
-                        for (i = startId - 10; i > targetId; i = i - 10)
-                            if (document.querySelector(`[square-id = "${i}"]`).firstChild?.classList.contains('piece'))
-                                return false
-                    if((startId-targetId) % 8 == 0)
-                        for (i = startId - 8; i > targetId; i = i - 8)
-                            if (document.querySelector(`[square-id = "${i}"]`).firstChild?.classList.contains('piece'))
-                                return false
-                }
-
-                return true
-            }
+            });
             break;
 
-        case 'rook':
-            if (startId + targetId%9 - startId%9 === targetId || (targetId - startId)%9 === 0 || (startId - targetId)%9 === 0 && !(startId === targetId)) {
-                if(targetId > startId){
-                    if(startId + targetId%9 - startId%9 === targetId)
-                        for (let i = startId + 1; i < targetId; i += 1)
-                            if (document.querySelector(`[square-id = "${i}"]`).firstChild?.classList.contains("piece"))
-                                return false
-                    if ((targetId - startId)%9 === 0)
-                        for (let i = startId + 9; i < targetId; i += 9)
-                            if (document.querySelector(`[square-id = "${i}"]`).firstChild?.classList.contains("piece"))
-                                return false
-                }
-                if(targetId < startId){
-                    if(startId + targetId%9 - startId%9 === targetId)
-                        for (let i = startId - 1; i > targetId; i -= 1)
-                            if (document.querySelector(`[square-id = "${i}"]`).firstChild?.classList.contains("piece"))
-                                return false
-                    if ((startId - targetId)%9 === 0)
-                        for (let i = startId - 9; i > targetId; i -= 9)
-                            if (document.querySelector(`[square-id = "${i}"]`).firstChild?.classList.contains("piece"))
-                                return false
-                }
-                return true
+        case "dead":
+            for (let i = 0; i <= 44; i += 1) {
+                checkAndColor(i, true);
             }
-            break;
-
-        case 'lance':
-            if (targetId % 9 === startId && !(startId === targetId) && startId < targetId) {
-                for (i = startId + 9; i < targetId; i = i+ 9)
-                    if (document.querySelector(`[square-id = "${i}"]`).firstChild?.classList.contains("piece"))
-                        return false
-                return true
-            }
-            break;
-
-        case 'knight':
-            if (startId + 19 === targetId || startId + 17 === targetId && !(startId === targetId)) {
-                return true
-            }
-            break;
-
-        case 'silver':
-            if (startId + width === targetId || startId + width + 1 === targetId || startId + width - 1 === targetId || startId - width + 1 === targetId
-              || startId - width - 1 === targetId && !(startId === targetId)) {
-                return true
-            }
-            break;
-
-        case 'gold':
-            if (startId + 1 === targetId|| startId - 1 === targetId|| startId + width === targetId|| startId - width === targetId
-              || startId + width + 1 === targetId || startId + width - 1 === targetId && !(startId === targetId)) {
-                return true
-            }
-            break;
-
-        case 'king':
-            if (startId + 1 === targetId|| startId - 1 === targetId|| startId + width === targetId|| startId - width === targetId || startId + width + 1 === targetId
-              || startId + width - 1 === targetId || startId - width + 1 === targetId || startId - width - 1 === targetId && !(startId === targetId)) {
-                return true
-            }
-            break;
-
-        case 'dragon':
-            if (startId + targetId%9 - startId%9 === targetId || (targetId - startId)%9 === 0 || (startId - targetId)%9 === 0 || startId + width + 1 === targetId ||
-              startId + width - 1 === targetId || startId - width + 1 === targetId || startId - width - 1 === targetId && !(startId === targetId)) {
-                if (targetId > startId) {
-                    if (startId + targetId % 9 - startId % 9 === targetId)
-                        for (let i = startId + 1; i < targetId; i += 1)
-                            if (document.querySelector(`[square-id = "${i}"]`).firstChild?.classList.contains("piece"))
-                                return false
-                    if ((targetId - startId) % 9 === 0)
-                        for (let i = startId + 9; i < targetId; i += 9)
-                            if (document.querySelector(`[square-id = "${i}"]`).firstChild?.classList.contains("piece"))
-                                return false
-                }
-                if (targetId < startId) {
-                    if (startId + targetId % 9 - startId % 9 === targetId)
-                        for (let i = startId - 1; i > targetId; i -= 1)
-                            if (document.querySelector(`[square-id = "${i}"]`).firstChild?.classList.contains("piece"))
-                                return false
-                    if ((startId - targetId) % 9 === 0)
-                        for (let i = startId - 9; i > targetId; i -= 9)
-                            if (document.querySelector(`[square-id = "${i}"]`).firstChild?.classList.contains("piece"))
-                                return false
-                }
-            }
-            break;
-        case 'horsedragon':
-            if (startId + (targetId - startId) === targetId || startId - (startId - targetId) === targetId || startId + 1 === targetId || startId - 1 === targetId|| startId + width === targetId ||
-                 startId - width === targetId && !(startId === targetId) ){
-                if (targetId > startId) {
-                    if((targetId-startId)%10==0)
-                        for (i = startId + 10; i < targetId; i = i + 10)
-                            if (document.querySelector(`[square-id = "${i}"]`).firstChild?.classList.contains('piece'))
-                                return false
-                    if((targetId-startId)%8==0)
-                        for (i = startId + 8; i < targetId; i = i + 8)
-                            if (document.querySelector(`[square-id = "${i}"]`).firstChild?.classList.contains('piece'))
-                                return false
-                }
-                if (targetId < startId) {
-                    if((startId-targetId) % 10 ==0)
-                        for (i = startId - 10; i > targetId; i = i - 10)
-                            if (document.querySelector(`[square-id = "${i}"]`).firstChild?.classList.contains('piece'))
-                                return false
-                    if((startId-targetId) % 8 == 0)
-                        for (i = startId - 8; i > targetId; i = i - 8)
-                            if (document.querySelector(`[square-id = "${i}"]`).firstChild?.classList.contains('piece'))
-                                return false
-                }
-
-                return true
-            }
-        case 'dead':
-            if (targetId < 44 && !(startId === targetId) )
-                return true
             break;
     }
+}
+
+function checkIfValid(target){
+    const targetElement = target.classList.contains('square') ? target : target.parentNode;
+    const targetClass = targetElement.classList;
+    const targetId = Number(targetElement.getAttribute('square-id'));
+
+    //console.log(`Target ID: ${targetId}`);
+    //console.log(`Target Class: ${[...targetClass].join(', ')}`);
+
+    const pieceOnTarget = targetElement.firstChild?.classList.contains('piece');
+    //console.log(`Piece on Target: ${pieceOnTarget}`);
+        if(pieceOnTarget){
+            if (targetClass.contains('colorRed')) {
+                console.log('Target is valid (Red)');
+                resetSquareColors();
+                return true;
+            }
+        } else if (targetClass.contains('colorGreen')) {
+            console.log('Target is valid (Green)');
+            resetSquareColors();
+            return true;
+        }
+    console.log('Target is not valid');
+    resetSquareColors();
+    return false;
+e
 }
 
 function changePlayer(){
@@ -396,25 +411,23 @@ function changePlayer(){
 }
 
 function deadPiece(e){
-    console.log(e.id)
-    console.log(e.classList[1])
-    if (e.classList[1] === 'white') {
-        e.innerHTML = pieceClass(e.getAttribute('main-id'))
-        e.id = 'dead'
-        e.firstChild.classList.add('white')
+    const pieceColor = e.classList[1];
+    const pieceType = e.getAttribute('main-id');
+    const newPiece = document.createElement('div');
+    newPiece.innerHTML = pieceClass(pieceType);
+    newPiece.id = 'dead';
+    newPiece.classList.add('piece', pieceColor);
+
+    if (pieceColor === 'white') {
         wc.unshift(e.id)
-        document.querySelector(`[square-id = "w1"]`).append(e)
+        document.querySelector(`[square-id = "w1"]`).append(newPiece)
     }
-    else if(e.classList[1] === 'black') {
-        e.innerHTML = ''
-        e.innerHTML = pieceClass(e.getAttribute('main-id'))
-        e.id = 'dead'
-        e.firstChild.classList.add('black')
+    else if(pieceColor === 'black') {
         bc.unshift(e.id)
-        document.querySelector(`[square-id = "b1"]`).append(e)
+        document.querySelector(`[square-id = "b1"]`).append(newPiece)
     }
 
-//  document.querySelector('[square-id = "${i} + "a""]').firstChild?.classList.contains("piece").append(e)
+    e.remove();
 
     console.log("wc " + wc)
     console.log("bc " + bc)
@@ -427,114 +440,53 @@ function check(){
     console.log('king= ' + kingLoc)
 
     function checkSquare(iOffset, pieceTypes){
-        i = iOffset
+        const square = document.querySelector(`[square-id="${iOffset}"]`);
+        if (!square) return false; 
+        const piece = square.firstChild;
+        const checkPlayer = piece?.classList[1] === player;
 
-        checkPlayer = document.querySelector(`[square-id="${i}"]`)?.firstChild?.classList[1] === player
+        //console.log('checkPiece ' + pieceTypes + ' ' + pieceTypes.includes(document.querySelector(`[square-id="${i}"]`)?.firstChild?.id) + ' ' + document.querySelector(`[square-id="${i}"]`)?.firstChild?.id )
 
-        console.log('checkPiece ' + pieceTypes + ' ' + pieceTypes.includes(document.querySelector(`[square-id="${i}"]`)?.firstChild?.id) + ' ' + document.querySelector(`[square-id="${i}"]`)?.firstChild?.id )
-
-        if (pieceTypes.includes(document.querySelector(`[square-id="${i}"]`)?.firstChild?.id) && !checkPlayer)
-            return true
-        else
-            return false
+        if (pieceTypes.includes(piece?.id) && !checkPlayer) {
+            console.log(`Piece giving check: ${piece?.id} at square ${iOffset}`);
+            return true;
+        }
+        return false;
     };
 
     if (checkSquare(kingLoc+1, ['silver', 'gold']) || checkSquare(kingLoc+9, ['pawn', 'silver', 'gold']) ||
-      checkSquare(kingLoc+8, ['silver', 'gold']) || checkSquare(kingLoc+10, ['silver', 'gold']) || checkSquare(kingLoc-10, ['silver']) || checkSquare(kingLoc-8, ['silver']) ||
-      checkSquare(kingLoc-9, ['gold']) || checkSquare(kingLoc-1, ['silver', 'gold']) || checkSquare(kingLoc+17, ['knight']) || checkSquare(kingLoc+19, ['knight']))
+      checkSquare(kingLoc+8, ['silver', 'gold']) || checkSquare(kingLoc+10, ['silver', 'gold']) || checkSquare(kingLoc-10, ['silver']) || 
+      checkSquare(kingLoc-8, ['silver']) ||checkSquare(kingLoc-9, ['gold']) || checkSquare(kingLoc-1, ['silver', 'gold']) || 
+      checkSquare(kingLoc+17, ['knight']) || checkSquare(kingLoc+19, ['knight']))
     {
-        console.log('if i= ' + i)
+        //console.log('if i= ' + i)
         return true;
     }
-
-    for (let i = kingLoc; (i%9 >= kingLoc%9) && (i <= 80); i += 10) {
-        if (checkSquare(i, ['bishop', 'horsedragon'])) {
-            for (let e = kingLoc + 10; e < i; e += 10)
-                if (document.querySelector(`[square-id = "${e}"]`).firstChild?.classList.contains('piece'))
-                    return false
-
-            console.log('not pass 1 i= ' + i)
-            return true
+    function checkDirection(increment, pieceTypes, limitCondition) {
+        for (let i = kingLoc + increment; limitCondition(i); i += increment) {
+            const square = document.querySelector(`[square-id="${i}"]`);
+            if (square && square.firstChild?.classList.contains('piece')) {
+                if (checkSquare(i, pieceTypes)) return true;
+                break;
+            }
         }
-        console.log('pass 1 i= ' + i)
-    }
-    for (let i = kingLoc; (i%9 <= kingLoc%9) && (i <= 80); i += 8) {
-        if (checkSquare(i, ['bishop', 'horsedragon'])) {
-            for (let e = kingLoc + 8; e < i; e += 8)
-                if (document.querySelector(`[square-id = "${e}"]`).firstChild?.classList.contains('piece'))
-                    return false
-
-            console.log('not pass 2 i= ' + i)
-            return true
-        }
-        console.log('pass 2 i= ' + i)
-    }
-    for (let i = kingLoc; (i%9 <= kingLoc%9) && (i >= 0); i -= 10) {
-        if (checkSquare(i, ['bishop', 'horsedragon'])) {
-            for (let e = kingLoc - 10; e > i; e -= 10)
-                if (document.querySelector(`[square-id = "${e}"]`).firstChild?.classList.contains('piece'))
-                    return false
-
-            console.log('not pass 3 i= ' + i)
-            return true
-        }
-        console.log('pass 3 i= ' + i)
-    }
-    for (let i = kingLoc; (i%9 >= kingLoc%9) && (i >= 0); i -= 8) {
-        if (checkSquare(i, ['bishop', 'horsedragon'])) {
-            for (let e = kingLoc - 8; e > i; e -= 8)
-                if (document.querySelector(`[square-id = "${e}"]`).firstChild?.classList.contains('piece'))
-                    return false
-
-            console.log('not pass 4 i= ' + i)
-            return true
-        }
-        console.log('pass 4 i= ' + i)
+        return false;
     }
 
-    for (let i = kingLoc; i <= (kingLoc + 9 * Math.floor(9 - kingLoc / 9)); i += 9) {
-        if (checkSquare(i, ['lance', 'rook', 'dragon'])) {
-            for (let e = kingLoc + 9; e < i; e += 9)
-                if (document.querySelector(`[square-id = "${e}"]`).firstChild?.classList.contains("piece"))
-                    return false
 
-            console.log('not pass 5 i= ' + i)
-            return true
-        }
-        console.log('pass 5 i= ' + i)
-    }
-    for (let i = kingLoc; i >= Math.floor(kingLoc / 9); i -= 9) {
-        if (checkSquare(i, ['rook', 'dragon'])) {
-            for (let e = kingLoc - 9; e > i; e -= 9)
-                if (document.querySelector(`[square-id = "${e}"]`).firstChild?.classList.contains("piece"))
-                    return false
+    const longRangeChecks = [
+        { increment: 10, types: ['bishop', 'horsedragon'], limitCondition: (i) => i % 9 >= kingLoc % 9 && i <= 80 },
+        { increment: 8, types: ['bishop', 'horsedragon'], limitCondition: (i) => i % 9 <= kingLoc % 9 && i <= 80 },
+        { increment: -10, types: ['bishop', 'horsedragon'], limitCondition: (i) => i % 9 <= kingLoc % 9 && i >= 0 },
+        { increment: -8, types: ['bishop', 'horsedragon'], limitCondition: (i) => i % 9 >= kingLoc % 9 && i >= 0 },
+        { increment: 9, types: ['lance', 'rook', 'dragon'], limitCondition: (i) => i <= kingLoc + 9 * Math.floor(9 - kingLoc / 9) },
+        { increment: -9, types: ['rook', 'dragon'], limitCondition: (i) => i >= Math.floor(kingLoc / 9) },
+        { increment: 1, types: ['rook', 'dragon'], limitCondition: (i) => i <= kingLoc + (kingLoc % 9) },
+        { increment: -1, types: ['rook', 'dragon'], limitCondition: (i) => i >= kingLoc - (8 - kingLoc % 9) }
+    ];
 
-            console.log('not pass 6 i= ' + i)
-            return true
-        }
-        console.log('pass 6 i= ' + i)
-    }
-    for (let i = kingLoc; i <= kingLoc + (kingLoc % 9); i += 1) {
-        if (checkSquare(i, ['rook', 'dragon'])) {
-            for (let e = kingLoc + 1; e < i; e += 1)
-                if (document.querySelector(`[square-id = "${e}"]`).firstChild?.classList.contains("piece"))
-                    return false
-
-            console.log('not pass 7 i= ' + i)
-            return true
-        }
-        console.log('pass 7 i= ' + i)
-    }
-    for (let i = kingLoc;( i >= kingLoc - (8 - kingLoc % 9)) ; i -= 1) {
-        if (checkSquare(i, ['rook', 'dragon'])) {
-            for (let e = kingLoc - 1; e > i; e -= 1)
-                if (document.querySelector(`[square-id = "${e}"]`).firstChild?.classList.contains("piece"))
-                    return false
-
-            console.log('not pass 8 i= ' + i)
-            return true
-        }
-        console.log('pass 8 i= ' + i)
+    for (const check of longRangeChecks) {
+        if (checkDirection(check.increment, check.types, check.limitCondition)) return true;
     }
 
     console.log('pass all')
